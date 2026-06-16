@@ -5,7 +5,7 @@ async function signup() {
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
   const password = document.getElementById("password").value;
-  const address=document.getElementById("address").value.trim();
+  const district = document.getElementById("district").value;
 
   if (name === "") {
     alert("Name is required");
@@ -18,10 +18,10 @@ async function signup() {
   }
 
   
-  if(address === ""){
-    alert("Address is required");
-    return;
-  }
+ if (district === "") {
+  alert("Please select a district");
+  return;
+} 
 
   if (password.length < 8) {
     alert("Password must be at least 8 characters");
@@ -37,7 +37,7 @@ async function signup() {
     body: JSON.stringify({
       name,
       phone,
-      address,
+      district,
       password
     })
   });
@@ -108,3 +108,27 @@ function logout() {
   localStorage.removeItem("user");
   window.location.href = "login.html";
 }
+
+//for click event
+document.addEventListener("DOMContentLoaded", () => {
+  const fields = [
+    document.getElementById("name"),
+    document.getElementById("phone"),
+    document.getElementById("district"),
+    document.getElementById("password")
+  ];
+
+  fields.forEach((field, index) => {
+    field.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+
+        if (index < fields.length - 1) {
+          fields[index + 1].focus();
+        } else {
+          signup();
+        }
+      }
+    });
+  });
+});

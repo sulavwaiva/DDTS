@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 
 // SIGNUP
 exports.signup = async (req, res) => {
-  const { name, phone, address, password } = req.body;
+  const { name, phone, district, password } = req.body;
 
   // Name validation
   if (!name || name.trim() === "") {
@@ -19,12 +19,12 @@ exports.signup = async (req, res) => {
     });
   }
 
-  //address validation
-  if (!address || address.trim() ===""){
-    return res.status(400).json({
-      message: "Address is required"
-    });
-  }
+  //district validation
+  if (!district) {
+  return res.status(400).json({
+    message: "District is required"
+  });
+}
 
   // Password validation
   if (!password || password.length < 8) {
@@ -38,8 +38,8 @@ exports.signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     db.query(
-      "INSERT INTO users (name, phone, address, password) VALUES (?, ?, ?, ?)",
-      [name.trim(), phone, address.trim(), hashedPassword],
+      "INSERT INTO users (name, phone, district, password) VALUES (?, ?, ?, ?)",
+      [name.trim(), phone, district, hashedPassword],
       (err) => {
         if (err) {
           console.error(err);
@@ -109,7 +109,8 @@ exports.login = (req, res) => {
         user: {
           id: user.id,
           name: user.name,
-          phone: user.phone
+          phone: user.phone,
+           district: user.district
         }
       });
     }
