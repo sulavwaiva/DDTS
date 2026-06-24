@@ -1,7 +1,7 @@
 const connection = require("../config/db");
 
 // Get district by name
-exports.getDistrictByName = (req, res) => {
+exports.getDistrictByName = async (req, res) => {
 
     const districtName = req.params.name;
 
@@ -18,14 +18,8 @@ exports.getDistrictByName = (req, res) => {
         WHERE LOWER(d.district_name) = LOWER(?)
     `;
 
-    connection.query(sql, [districtName], (err, results) => {
-
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                error: err.message
-            });
-        }
+    try {
+        const [results] = await connection.query(sql, [districtName]);
 
         if (results.length === 0) {
             return res.status(404).json({
@@ -38,5 +32,11 @@ exports.getDistrictByName = (req, res) => {
             success: true,
             data: results[0]
         });
-    });
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
 };
