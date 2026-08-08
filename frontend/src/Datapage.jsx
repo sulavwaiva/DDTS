@@ -8,14 +8,12 @@ const API = "http://localhost:3000/api";
 function ChartCanvas({ id, type, data, options, height = 260 }) {
   const ref = useRef(null);
   const instance = useRef(null);
-
   useEffect(() => {
     if (!ref.current || !data) return;
     if (instance.current) instance.current.destroy();
     instance.current = new Chart(ref.current, { type, data, options });
     return () => { if (instance.current) instance.current.destroy(); };
   }, [JSON.stringify(data)]);
-
   return <canvas ref={ref} style={{ height, maxHeight: height }} />;
 }
 
@@ -34,8 +32,8 @@ function Card({ label, value, sub }) {
   );
 }
 
-// ── Section wrapper ────────────────────────────────────────────
-function Section({ title, children }) {
+// ── Section wrapper (optional accent color for the title underline) ──
+function Section({ title, accent = "#e8f5ee", children }) {
   return (
     <div style={{
       background: "#fff", border: "1px solid #e0e9e4",
@@ -44,7 +42,7 @@ function Section({ title, children }) {
       <h3 style={{
         margin: "0 0 16px", fontSize: 13, fontWeight: 700,
         color: "#1a3c2e", textTransform: "uppercase", letterSpacing: ".6px",
-        borderBottom: "2px solid #e8f5ee", paddingBottom: 10,
+        borderBottom: `2px solid ${accent}`, paddingBottom: 10,
       }}>{title}</h3>
       {children}
     </div>
@@ -90,6 +88,7 @@ const GREEN = ["#1a5c38","#2e7d52","#43a570","#66bb8a","#98d4b0","#c8e6c9","#a5d
 // non-null values for the detail fields below — every other district
 // returns null for them, so those sections show a "not available" state.
 // ══════════════════════════════════════════════════════════════
+
 export default function DataPage({ token }) {
   const [districts, setDistricts] = useState([]);
   const [districtName, setDistrictName] = useState("");
@@ -147,7 +146,7 @@ export default function DataPage({ token }) {
     }],
   } : null;
 
-  // ── Water chart (proportions 0-1 → %) ───────────────────────
+  // ── Khanepani / drinking water chart (proportions 0-1 → %) ──
   const waterData = hasDetail ? (() => {
     const pairs = [
       ["Tap (within)",   d.tap_within_compound],
@@ -201,7 +200,13 @@ export default function DataPage({ token }) {
     }],
   } : null;
 
-  const TABS = ["population", "education", "economy"];
+  const TABS = ["population", "education", "khanepani", "economy"];
+  const TAB_LABELS = {
+    population: "Population",
+    education: "Education",
+    khanepani: "Khanepani",
+    economy: "Economy",
+  };
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 24px" }}>
@@ -245,7 +250,6 @@ export default function DataPage({ token }) {
             ))}
           </select>
         </div>
-
         {districtName && (
           <div style={{
             padding: "8px 14px", borderRadius: 8,
@@ -260,25 +264,29 @@ export default function DataPage({ token }) {
 
       {/* ── Tabs ── */}
       {districtName && (
-        <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
-          {TABS.map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              style={{
-                padding: "8px 22px", borderRadius: "8px 8px 0 0",
-                border: "1px solid #e0e9e4",
-                borderBottom: tab === t ? "2px solid #fff" : "1px solid #e0e9e4",
-                background: tab === t ? "#fff" : "#f4f8f5",
-                color: tab === t ? "#1a3c2e" : "#7a9e8a",
-                fontWeight: tab === t ? 700 : 400,
-                fontSize: 13, cursor: "pointer",
-                textTransform: "capitalize",
-              }}
-            >
-              {t}
-            </button>
-          ))}
+        <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
+          {TABS.map(t => {
+            const active = tab === t;
+            const isWater = t === "khanepani";
+            return (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                style={{
+                  padding: "8px 22px", borderRadius: "8px 8px 0 0",
+                  border: isWater && active ? "1px solid #2e7d52" : "1px solid #e0e9e4",
+                  borderBottom: active ? "2px solid #fff" : "1px solid #e0e9e4",
+                  background: active ? "#fff" : "#f4f8f5",
+                  color: active ? (isWater ? "#1a5c38" : "#1a3c2e") : "#7a9e8a",
+                  fontWeight: active ? 700 : 400,
+                  fontSize: 13, cursor: "pointer",
+                  textTransform: "capitalize",
+                }}
+              >
+                {TAB_LABELS[t]}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -309,61 +317,43 @@ export default function DataPage({ token }) {
 
       {/* ══ POPULATION TAB ══ */}
       {!loading && d && tab === "population" && (
-        <>
-          <Section title="Population Highlights">
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
+        <Section title="Population Highlights">
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
+            <Card
+              label="Total Population"
+              value={d.total_population.toLocaleString()}
+              sub="Census 2078"
+            />
+            <Card
+              label="Male"
+              value={d.no_of_male.toLocaleString()}
+              sub={`${((d.no_of_male / d.total_population) * 100).toFixed(1)}%`}
+            />
+            <Card
+              label="Female"
+              value={d.no_of_female.toLocaleString()}
+              sub={`${((d.no_of_female / d.total_population) * 100).toFixed(1)}%`}
+            />
+            {d.total_households != null && (
               <Card
-                label="Total Population"
-                value={d.total_population.toLocaleString()}
-                sub="Census 2078"
+                label="Households"
+                value={d.total_households.toLocaleString()}
+                sub={d.avg_household_size ? `Avg ${d.avg_household_size}/household` : ""}
               />
-              <Card
-                label="Male"
-                value={d.no_of_male.toLocaleString()}
-                sub={`${((d.no_of_male / d.total_population) * 100).toFixed(1)}%`}
-              />
-              <Card
-                label="Female"
-                value={d.no_of_female.toLocaleString()}
-                sub={`${((d.no_of_female / d.total_population) * 100).toFixed(1)}%`}
-              />
-              {d.total_households != null && (
-                <Card
-                  label="Households"
-                  value={d.total_households.toLocaleString()}
-                  sub={d.avg_household_size ? `Avg ${d.avg_household_size}/household` : ""}
-                />
-              )}
-              {d.sex_ratio != null && (
-                <Card label="Sex Ratio" value={d.sex_ratio} sub="males per 100 females" />
-              )}
-            </div>
-
-            <div style={{ maxWidth: 400, margin: "0 auto" }}>
-              <ChartCanvas
-                id={`pop-${districtName}`}
-                type="bar"
-                data={popBarData}
-                options={barOpts()}
-              />
-            </div>
-          </Section>
-
-          {/* Water shown in population tab since it's census data */}
-          {hasDetail && (
-            <Section title="Drinking Water Sources">
-              <div style={{ maxWidth: 600, margin: "0 auto" }}>
-                <ChartCanvas
-                  id={`water-${districtName}`}
-                  type="doughnut"
-                  data={waterData}
-                  options={doughnutOpts}
-                  height={300}
-                />
-              </div>
-            </Section>
-          )}
-        </>
+            )}
+            {d.sex_ratio != null && (
+              <Card label="Sex Ratio" value={d.sex_ratio} sub="males per 100 females" />
+            )}
+          </div>
+          <div style={{ maxWidth: 400, margin: "0 auto" }}>
+            <ChartCanvas
+              id={`pop-${districtName}`}
+              type="bar"
+              data={popBarData}
+              options={barOpts()}
+            />
+          </div>
+        </Section>
       )}
 
       {/* ══ EDUCATION TAB ══ */}
@@ -381,6 +371,25 @@ export default function DataPage({ token }) {
                 type="bar"
                 data={eduBarData}
                 options={barOpts("%")}
+              />
+            </div>
+          </Section>
+        ) : (
+          <EmptyState>Data not available for {districtName}</EmptyState>
+        )
+      )}
+
+      {/* ══ KHANEPANI (DRINKING WATER) TAB ══ */}
+      {!loading && d && tab === "khanepani" && (
+        hasDetail ? (
+          <Section title="Khanepani — Drinking Water Sources" accent="#2e7d52">
+            <div style={{ maxWidth: 600, margin: "0 auto" }}>
+              <ChartCanvas
+                id={`water-${districtName}`}
+                type="doughnut"
+                data={waterData}
+                options={doughnutOpts}
+                height={300}
               />
             </div>
           </Section>
