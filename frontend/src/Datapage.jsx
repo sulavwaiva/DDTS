@@ -245,21 +245,11 @@ export default function DataPage({ token }) {
             <option value="">Select</option>
             {districts.map(dd => (
               <option key={dd.district_id} value={dd.district_name}>
-                {dd.district_name}{dd.has_full_data ? " ★" : ""}
+                {dd.district_name}
               </option>
             ))}
           </select>
         </div>
-        {districtName && (
-          <div style={{
-            padding: "8px 14px", borderRadius: 8,
-            background: hasDetail ? "#e8f5ee" : "#fff3e0",
-            color: hasDetail ? "#1a5c38" : "#b45309",
-            fontSize: 12, fontWeight: 600,
-          }}>
-            {hasDetail ? "Full data available" : "Population only"}
-          </div>
-        )}
       </div>
 
       {/* ── Tabs ── */}

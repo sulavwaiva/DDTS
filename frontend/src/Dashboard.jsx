@@ -31,7 +31,7 @@ function normalize(str) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-export default function Dashboard({ user, token, onLogout }) {
+export default function Dashboard({ user, token }) {
   // Cache of normalized-name -> real district_name from the API,
   // built once so every map click can resolve to a valid lookup.
   const lookupRef = useRef(null);
@@ -88,51 +88,41 @@ export default function Dashboard({ user, token, onLogout }) {
     }
   }
 
-  return (
+ return (
+  <div
+    style={{
+      width: "100%",
+      minHeight: "calc(100vh - 52px)",
+      margin: 0,
+      padding: 0,
+      overflow: "hidden",
+      background: "#f4f6f8",
+    }}
+  >
     <div
       style={{
         width: "100%",
-        maxWidth: "1400px",
-        margin: "0 auto",
-        padding: "20px",
+        padding: "10px 16px",
+        boxSizing: "border-box",
       }}
     >
-      <div
+      <h1
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "10px",
+          margin: 0,
+          fontSize: "24px",
+          lineHeight: 1.2,
+          color: "#1a3c2e",
         }}
       >
-        <h1>Nepal Development Dashboard</h1>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {user && (
-            <span style={{ fontSize: "14px", color: "#444" }}>
-              {user.name} ({user.role})
-            </span>
-          )}
-          <button
-            onClick={onLogout}
-            style={{
-              padding: "6px 14px",
-              fontSize: "14px",
-              border: "1px solid #ccc",
-              borderRadius: "6px",
-              background: "#fff",
-              cursor: "pointer",
-            }}
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-
-      <NepalMap
-        provinceData={provinceData}
-        districtData={districtData}
-        onDistrictClick={fetchDistrict}
-      />
+        Nepal Development Dashboard
+      </h1>
     </div>
-  );
+
+    <NepalMap
+      provinceData={provinceData}
+      districtData={districtData}
+      onDistrictClick={fetchDistrict}
+    />
+  </div>
+);
 }

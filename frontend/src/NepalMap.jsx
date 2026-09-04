@@ -229,9 +229,24 @@ console.log("GeoJSON:", json);
         )}
       </div>
 
-      <div style={{ display: "flex" }}>
+      <div
+        style={{
+          display: "flex",
+          width: "100%",
+          maxWidth: "100%",
+          overflow: "hidden",
+        }}
+      >
         {/* Map */}
-        <div ref={mapRef} style={{ flex: 1, height: 520 }} />
+        <div
+          ref={mapRef}
+          style={{
+            flex: 1,
+              minWidth: 0,
+              width: "100%",
+              height: "calc(100vh - 120px)",
+            }}
+          />
 
         {/* Info Panel */}
         {(selectedDistrict || selectedProvince) && (

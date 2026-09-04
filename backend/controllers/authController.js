@@ -13,6 +13,20 @@ exports.signup = async (req, res) => {
         });
     }
 
+     if (!/^[0-9]{10}$/.test(phone)) {
+        return res.status(400).json({
+            success: false,
+            message: "Phone number must be exactly 10 digits"
+        });
+    }
+
+     if (password.length < 8) {
+        return res.status(400).json({
+            success: false,
+            message: "Password must be at least 8 characters"
+        });
+    }
+    
     try {
         const [existing] = await connection.query(
             "SELECT user_id FROM users WHERE phone = ?",
@@ -64,7 +78,7 @@ exports.login = async (req, res) => {
         if (results.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "invalid credentials"
             });
         }
 
@@ -98,6 +112,56 @@ exports.login = async (req, res) => {
                 province:      user.province,
             }
         });
+
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+// CHANGE PASSWORD (logged in user only)
+exports.changePassword = async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({
+            success: false,
+            message: "Current and new password are required"
+        });
+    }
+
+    if (newPassword.length < 8) {
+        return res.status(400).json({
+            success: false,
+            message: "New password must be at least 8 characters"
+        });
+    }
+
+    try {
+        const [results] = await connection.query(
+            "SELECT password FROM users WHERE user_id = ?",
+            [req.user.userId]
+        );
+
+        if (results.length === 0) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, results[0].password);
+
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Current password is incorrect"
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await connection.query(
+            "UPDATE users SET password = ? WHERE user_id = ?",
+            [hashedPassword, req.user.userId]
+        );
+
+        res.json({ success: true, message: "Password updated successfully" });
 
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });

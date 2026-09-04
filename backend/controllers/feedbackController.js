@@ -26,7 +26,17 @@ exports.getFeedbackById = async (req, res) => {
             return res.status(404).json({ success: false, message: "Feedback not found" });
         }
 
-        // Also get history for this feedback
+        // ── IDOR fix ──────────────────────────────────────────
+        // Citizens can only view their own feedback
+        // Admins can view any feedback
+        if (req.user.role !== "admin" && feedback[0].user_id !== req.user.userId) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied"
+            });
+        }
+        // ─────────────────────────────────────────────────────
+
         const [history] = await connection.query(
             "SELECT fh.*, u.name AS changed_by_name FROM feedback_history fh LEFT JOIN users u ON fh.user_id = u.user_id WHERE fh.feedback_id = ? ORDER BY fh.date ASC",
             [id]
@@ -75,7 +85,7 @@ exports.submitFeedback = async (req, res) => {
     }
 };
 
-// UPDATE feedback status (admin/officer only)
+// update as a transaction
 exports.updateFeedbackStatus = async (req, res) => {
     const { id } = req.params;
     const { status, change_note } = req.body;
@@ -85,33 +95,41 @@ exports.updateFeedbackStatus = async (req, res) => {
         return res.status(400).json({ success: false, message: "Invalid status" });
     }
 
+    // Get a dedicated connection from the pool for this transaction
+    const conn = await connection.getConnection();
+
     try {
-        // Get current status first
-        const [current] = await connection.query(
+        const [current] = await conn.query(
             "SELECT status FROM feedback WHERE feedback_id = ?",
             [id]
         );
 
         if (current.length === 0) {
+            conn.release();
             return res.status(404).json({ success: false, message: "Feedback not found" });
         }
 
         const old_status = current[0].status;
 
-        // Update feedback status
-        await connection.query(
+        await conn.beginTransaction();
+
+        await conn.query(
             "UPDATE feedback SET status = ? WHERE feedback_id = ?",
             [status, id]
         );
 
-        // Log to feedback_history
-        await connection.query(
+        await conn.query(
             "INSERT INTO feedback_history (feedback_id, user_id, old_status, new_status, change_note) VALUES (?, ?, ?, ?, ?)",
             [id, req.user.userId, old_status, status, change_note || null]
         );
 
+        await conn.commit();
+
         res.json({ success: true, message: "Feedback status updated" });
     } catch (err) {
+        await conn.rollback();
         res.status(500).json({ success: false, error: err.message });
+    } finally {
+        conn.release();
     }
 };

@@ -19,30 +19,35 @@ export default function LoginScreen({
   return (
     <div className="ddms-login-root">
       <style>{`
+        html, body, #root {
+         width: 100%;
+         height: 100%;
+         margin: 0;
+         padding: 0;
+}
         .ddms-login-root{
-          min-height:100vh;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          padding:40px 20px;
-          box-sizing:border-box;
-          background:${BRAND.tealDeep};
-          background-image:
-            radial-gradient(circle at 8% 12%, rgba(244,239,224,0.05), transparent 40%),
-            radial-gradient(circle at 92% 88%, rgba(244,239,224,0.04), transparent 40%),
-            radial-gradient(circle at 50% 100%, rgba(232,153,43,0.06), transparent 50%);
-          font-family:'Inter', 'Segoe UI', sans-serif;
-        }
+           width:100%;
+           min-height:100vh;
+           padding:0;
+           box-sizing:border-box;
+           background:${BRAND.tealDeep};
+           background-image:
+           radial-gradient(circle at 8% 12%, rgba(244,239,224,0.05), transparent 40%),
+           radial-gradient(circle at 92% 88%, rgba(244,239,224,0.04), transparent 40%),
+           radial-gradient(circle at 50% 100%, rgba(232,153,43,0.06), transparent 50%);
+           font-family:'Inter', 'Segoe UI', sans-serif;
+}
         .ddms-login-card{
           position:relative;
           display:flex;
           width:100%;
-          max-width:980px;
-          min-height:600px;
-          border-radius:28px;
+          height:100vh;
+          max-width:none;
+          min-height:100vh;
+          border-radius:0;
           overflow:hidden;
-          box-shadow:0 30px 80px -30px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.04) inset;
-        }
+          box-shadow:none;
+}
         .ddms-login-illustration{
           position:relative;
           flex:1.05;
@@ -86,7 +91,8 @@ export default function LoginScreen({
           .ddms-login-illustration{ display:none; }
           .ddms-login-form-side{ padding:48px 28px; min-width:0; flex:1; }
         }
-      `}</style>
+      `}
+        </style>
 
       <div className="ddms-login-card">
 
@@ -142,7 +148,7 @@ export default function LoginScreen({
           position: "absolute", bottom: 20, left: 28, margin: 0,
           fontSize: 10.5, color: BRAND.teal, opacity: 0.55, lineHeight: 1.5,
         }}>
-          © 2026 Discover DDMS<br />Powered by Bhaktapur Municipality
+          © 2026 Discover DDMS
         </p>
       </div>
 

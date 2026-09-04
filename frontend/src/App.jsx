@@ -2,16 +2,29 @@ import { useState } from "react";
 import LoginScreen from "./Loginscreen";
 import SignupScreen from "./Signupscreen";
 import Dashboard from "./Dashboard";
-import DataPage from "./DataPage";
-import ProjectsPage from "./ProjectsPage";
-import FacilitiesPage from "./FacilitiesPage";
-import { CitizenFeedbackPage, AdminFeedbackPage } from "./FeedbackPage";
+import DataPage from "./Datapage";
+import ProjectsPage from "./Projectspage";
+import FacilitiesPage from "./Facilitiespage";
+import { CitizenFeedbackPage, AdminFeedbackPage } from "./Feedbackpage";
+import Profile from "./Profile";
 
 const API_BASE = "http://localhost:3000/api/auth";
 
 export default function App() {
   const [mode, setMode]       = useState("login");
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState(() => {
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+
+    if (token && user) {
+      return {
+        token,
+        user: JSON.parse(user),
+      };
+    }
+
+    return null;
+  });
   const [page, setPage]       = useState("map");
 
   const [phone, setPhone]     = useState("");
@@ -98,14 +111,10 @@ export default function App() {
           height: 52, position: "sticky", top: 0, zIndex: 100,
           boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
         }}>
+
           {/* Brand */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ color: "#fff", fontWeight: 700, fontSize: 17, letterSpacing: 1 }}>DDMS</span>
-            <span style={{
-              color: "#6aad84", fontSize: 11,
-              background: "#0d2818", padding: "2px 8px",
-              borderRadius: 10, fontWeight: 600,
-            }}>Bhaktapur</span>
           </div>
 
           {/* Tabs */}
@@ -124,47 +133,65 @@ export default function App() {
                 }}
               >
                 {label}
-                {key === "feedback" && page !== "feedback" && session.user.role === "admin" && (
-                  <span style={{
-                    marginLeft: 5, background: "#ef4444", color: "#fff",
-                    borderRadius: 8, padding: "1px 5px", fontSize: 10, fontWeight: 700,
-                  }}>
-                    !
-                  </span>
-                )}
+                
               </button>
             ))}
           </div>
 
           {/* User + logout */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ color: "#a3c4a8", fontSize: 13 }}>
-              {session.user.name}
-              <span style={{
-                marginLeft: 6,
-                background: isAdmin ? "#7c2d12" : "#2d5a3d",
-                color: isAdmin ? "#fca5a5" : "#7ecf93",
-                padding: "2px 8px", borderRadius: 10,
-                fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px",
-              }}>
-                {session.user.role}
-              </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          
+          {/* Clickable user name */}
+          <button
+            onClick={() => setPage("profile")}
+            style={{
+              border: "none",
+              background: "transparent",
+              color: "#a3c4a8",
+              cursor: "pointer",
+              fontSize: 13,
+              padding: 0,
+            }}
+          >
+            {session.user.name}
+
+            <span style={{
+              marginLeft: 6,
+              background: isAdmin ? "#7c2d12" : "#2d5a3d",
+              color: isAdmin ? "#fca5a5" : "#7ecf93",
+              padding: "2px 8px",
+              borderRadius: 10,
+              fontSize: 10,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: ".5px",
+            }}>
+              {session.user.role}
             </span>
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: "5px 14px", fontSize: 12,
-                border: "1px solid #2d5a3d", borderRadius: 6,
-                background: "transparent", color: "#a3c4a8", cursor: "pointer",
-              }}
-            >
-              Logout
-            </button>
-          </div>
+          </button>
+
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: "5px 14px",
+              fontSize: 12,
+              border: "1px solid #2d5a3d",
+              borderRadius: 6,
+              background: "transparent",
+              color: "#a3c4a8",
+              cursor: "pointer",
+            }}
+          >
+            Logout
+          </button>
+
+        </div>
+          
         </nav>
 
         {/* Pages */}
-        {page === "map"        && <Dashboard    user={session.user} token={session.token} onLogout={handleLogout} />}
+        {page === "map"        && <Dashboard    user={session.user} token={session.token} />}
         {page === "data"       && <DataPage     token={session.token} />}
         {page === "projects"   && <ProjectsPage token={session.token} />}
         {page === "facilities" && <FacilitiesPage />}
@@ -173,6 +200,12 @@ export default function App() {
             ? <AdminFeedbackPage  token={session.token} />
             : <CitizenFeedbackPage token={session.token} user={session.user} />
         )}
+        {page === "profile" && (
+            <Profile
+              user={session.user}
+              onBack={() => setPage("map")}
+            />
+          )}
       </div>
     );
   }
@@ -181,10 +214,16 @@ export default function App() {
   if (mode === "signup") {
     return (
       <SignupScreen
-        name={suName} phone={suPhone} password={suPassword} districtId={suDistrictId}
-        error={error} loading={loading}
-        onNameChange={setSuName} onPhoneChange={setSuPhone}
-        onPasswordChange={setSuPassword} onDistrictIdChange={setSuDistrictId}
+        name={suName} 
+        phone={suPhone} 
+        password={suPassword} 
+        districtId={suDistrictId}
+        error={error} 
+        loading={loading}
+        onNameChange={setSuName} 
+        onPhoneChange={setSuPhone}
+        onPasswordChange={setSuPassword} 
+        onDistrictIdChange={setSuDistrictId}
         onSubmit={handleSignup}
         onSwitchToLogin={() => { resetMessages(); setMode("login"); }}
       />
