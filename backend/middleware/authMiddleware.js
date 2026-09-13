@@ -1,8 +1,10 @@
 const jwt = require("jsonwebtoken");
 
+//define verifytoken
 exports.verifyToken = (req, res, next) => {
     const authHeader = req.headers["authorization"];
 
+    //validation 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({ success: false, message: "No token provided" });
     }
@@ -18,6 +20,7 @@ exports.verifyToken = (req, res, next) => {
     });
 };
 
+//define checkrole.authorization
 exports.checkRole = (...allowedRoles) => {
     return (req, res, next) => {
         if (!req.user || !allowedRoles.includes(req.user.role)) {

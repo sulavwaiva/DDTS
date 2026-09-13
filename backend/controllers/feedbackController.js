@@ -61,7 +61,6 @@ exports.getMyFeedback = async (req, res) => {
     }
 };
 
-// SUBMIT feedback (any logged in user)
 exports.submitFeedback = async (req, res) => {
     const { details } = req.body;
 
@@ -69,10 +68,17 @@ exports.submitFeedback = async (req, res) => {
         return res.status(400).json({ success: false, message: "Feedback details are required" });
     }
 
+    if (!req.user.district_id) {
+        return res.status(400).json({
+            success: false,
+            message: "You must be registered to a district to submit feedback"
+        });
+    }
+
     try {
         const [result] = await connection.query(
-            "INSERT INTO feedback (user_id, details, status) VALUES (?, ?, 'pending')",
-            [req.user.userId, details]
+            "INSERT INTO feedback (user_id, district_id, details, status) VALUES (?, ?, ?, 'pending')",
+            [req.user.userId, req.user.district_id, details]
         );
 
         res.status(201).json({
@@ -84,7 +90,6 @@ exports.submitFeedback = async (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 };
-
 // update as a transaction
 exports.updateFeedbackStatus = async (req, res) => {
     const { id } = req.params;

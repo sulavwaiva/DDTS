@@ -127,7 +127,7 @@ useEffect(() => {
   setError("");
 
   fetch(
-    `${API}/districts/${encodeURIComponent(selectedDistrict)}/facilities`
+    `${API}/facilities/district/${encodeURIComponent(selectedDistrict)}`
   )
     .then(r => r.json())
     .then(d => {

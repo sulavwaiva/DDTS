@@ -2,10 +2,12 @@ const connection = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-// SIGNUP - always creates citizen
+// define signup.always citizen at first
 exports.signup = async (req, res) => {
     const { name, phone, password, district_id } = req.body;
 
+
+    //validation
     if (!name || !phone || !password) {
         return res.status(400).json({
             success: false,
@@ -26,7 +28,8 @@ exports.signup = async (req, res) => {
             message: "Password must be at least 8 characters"
         });
     }
-    
+
+    //database opeartion
     try {
         const [existing] = await connection.query(
             "SELECT user_id FROM users WHERE phone = ?",
@@ -56,19 +59,22 @@ exports.signup = async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
-};
+};//error message
 
-// LOGIN - citizen and admin
+// define login.two users citizen and admin
 exports.login = async (req, res) => {
     const { phone, password } = req.body;
 
+
+    //validation (data received from the frontend)
     if (!phone || !password) {
         return res.status(400).json({
             success: false,
             message: "Phone and password are required"
         });
     }
-
+ 
+    //database operation
     try {
         const [results] = await connection.query(
             "SELECT u.*, d.district_name, d.province FROM users u LEFT JOIN districts d ON u.district_id = d.district_id WHERE u.phone = ?",
@@ -92,8 +98,10 @@ exports.login = async (req, res) => {
             });
         }
 
+
+        //create signed jwt
         const token = jwt.sign(
-            { userId: user.user_id, role: user.role, name: user.name },
+            { userId: user.user_id, role: user.role, name: user.name, district_id:user.district_id},
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
         );
@@ -117,10 +125,14 @@ exports.login = async (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 };
-// CHANGE PASSWORD (logged in user only)
+
+
+// change password
 exports.changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
+
+    //validation
     if (!currentPassword || !newPassword) {
         return res.status(400).json({
             success: false,
@@ -135,6 +147,7 @@ exports.changePassword = async (req, res) => {
         });
     }
 
+    //database operations
     try {
         const [results] = await connection.query(
             "SELECT password FROM users WHERE user_id = ?",
@@ -166,4 +179,4 @@ exports.changePassword = async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
-};
+};//error message

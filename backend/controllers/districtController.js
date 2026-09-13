@@ -58,30 +58,3 @@ exports.getDistrictById = async (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 };
-
-// GET all facilities for a district by district name
-exports.getFacilities = async (req, res) => {
-    const { name } = req.params;
-
-    try {
-        const sql = `
-            SELECT f.*
-            FROM facilities f
-            JOIN districts d ON f.district_id = d.district_id
-            WHERE d.district_name = ?
-            ORDER BY f.name ASC
-        `;
-
-        const [results] = await connection.query(sql, [name]);
-
-        res.json({
-            success: true,
-            data: results
-        });
-    } catch (err) {
-        res.status(500).json({
-            success: false,
-            error: err.message
-        });
-    }
-};
