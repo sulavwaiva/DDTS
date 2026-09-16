@@ -98,9 +98,7 @@ exports.createFacility = async (req, res) => {
         ward,
         address,
         phone,
-        details,
-        latitude,
-        longitude
+        details
     } = req.body;
 
     if (!district_id || !category || !name) {
@@ -117,25 +115,11 @@ exports.createFacility = async (req, res) => {
         });
     }
 
-    if (latitude !== undefined && latitude !== null && (latitude < -90 || latitude > 90)) {
-        return res.status(400).json({
-            success: false,
-            message: "Latitude must be between -90 and 90"
-        });
-    }
-
-    if (longitude !== undefined && longitude !== null && (longitude < -180 || longitude > 180)) {
-        return res.status(400).json({
-            success: false,
-            message: "Longitude must be between -180 and 180"
-        });
-    }
-
     try {
         const [result] = await connection.query(
             `INSERT INTO facilities
-                (district_id, category, name, type, ownership, ward, address, phone, details, latitude, longitude)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                (district_id, category, name, type, ownership, ward, address, phone, details)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 district_id,
                 category,
@@ -145,9 +129,7 @@ exports.createFacility = async (req, res) => {
                 ward ?? null,
                 address ?? null,
                 phone ?? null,
-                details ?? null,
-                latitude ?? null,
-                longitude ?? null
+                details ?? null
             ]
         );
 
@@ -168,9 +150,7 @@ exports.updateFacility = async (req, res) => {
         ward,
         address,
         phone,
-        details,
-        latitude,
-        longitude
+        details
     } = req.body;
 
     if (!category || !name) {
@@ -187,24 +167,10 @@ exports.updateFacility = async (req, res) => {
         });
     }
 
-    if (latitude !== undefined && latitude !== null && (latitude < -90 || latitude > 90)) {
-        return res.status(400).json({
-            success: false,
-            message: "Latitude must be between -90 and 90"
-        });
-    }
-
-    if (longitude !== undefined && longitude !== null && (longitude < -180 || longitude > 180)) {
-        return res.status(400).json({
-            success: false,
-            message: "Longitude must be between -180 and 180"
-        });
-    }
-
     try {
         const [result] = await connection.query(
             `UPDATE facilities
-             SET category = ?, name = ?, type = ?, ownership = ?, ward = ?, address = ?, phone = ?, details = ?, latitude = ?, longitude = ?
+             SET category = ?, name = ?, type = ?, ownership = ?, ward = ?, address = ?, phone = ?, details = ?
              WHERE facility_id = ?`,
             [
                 category,
@@ -215,8 +181,6 @@ exports.updateFacility = async (req, res) => {
                 address ?? null,
                 phone ?? null,
                 details ?? null,
-                latitude ?? null,
-                longitude ?? null,
                 id
             ]
         );

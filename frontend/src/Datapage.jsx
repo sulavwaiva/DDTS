@@ -21,27 +21,27 @@ function ChartCanvas({ id, type, data, options, height = 260 }) {
 function Card({ label, value, sub }) {
   return (
     <div style={{
-      background: "#fff", border: "1px solid #e0e9e4",
+      background: "#fff", border: "1px solid #DEE6F0",
       borderRadius: 10, padding: "14px 18px",
       flex: 1, minWidth: 130,
     }}>
-      <p style={{ margin: 0, fontSize: 11, color: "#7a9e8a", textTransform: "uppercase", letterSpacing: ".5px" }}>{label}</p>
-      <p style={{ margin: "5px 0 2px", fontSize: 20, fontWeight: 700, color: "#1a3c2e" }}>{value}</p>
-      {sub && <p style={{ margin: 0, fontSize: 11, color: "#9eb8ab" }}>{sub}</p>}
+      <p style={{ margin: 0, fontSize: 11, color: "#647B9A", textTransform: "uppercase", letterSpacing: ".5px" }}>{label}</p>
+      <p style={{ margin: "5px 0 2px", fontSize: 20, fontWeight: 700, color: "#002868" }}>{value}</p>
+      {sub && <p style={{ margin: 0, fontSize: 11, color: "#879BB6" }}>{sub}</p>}
     </div>
   );
 }
 
 // ── Section wrapper (optional accent color for the title underline) ──
-function Section({ title, accent = "#e8f5ee", children }) {
+function Section({ title, accent = "#EAF1FA", children }) {
   return (
     <div style={{
-      background: "#fff", border: "1px solid #e0e9e4",
+      background: "#fff", border: "1px solid #DEE6F0",
       borderRadius: 12, padding: "20px 24px", marginBottom: 20,
     }}>
       <h3 style={{
         margin: "0 0 16px", fontSize: 13, fontWeight: 700,
-        color: "#1a3c2e", textTransform: "uppercase", letterSpacing: ".6px",
+        color: "#002868", textTransform: "uppercase", letterSpacing: ".6px",
         borderBottom: `2px solid ${accent}`, paddingBottom: 10,
       }}>{title}</h3>
       {children}
@@ -51,7 +51,7 @@ function Section({ title, accent = "#e8f5ee", children }) {
 
 function EmptyState({ children }) {
   return (
-    <div style={{ textAlign: "center", padding: "60px", color: "#9eb8ab" }}>
+    <div style={{ textAlign: "center", padding: "60px", color: "#879BB6" }}>
       {children}
     </div>
   );
@@ -65,20 +65,20 @@ const barOpts = (suffix = "") => ({
     tooltip: { callbacks: { label: (c) => ` ${c.parsed.y.toLocaleString()}${suffix}` } },
   },
   scales: {
-    y: { beginAtZero: true, grid: { color: "#f0f4f2" }, ticks: { color: "#7a9e8a" } },
-    x: { grid: { display: false }, ticks: { color: "#2e4a38" } },
+    y: { beginAtZero: true, grid: { color: "#F0F4FA" }, ticks: { color: "#647B9A" } },
+    x: { grid: { display: false }, ticks: { color: "#234671" } },
   },
 });
 
 const doughnutOpts = {
   responsive: true,
   plugins: {
-    legend: { position: "right", labels: { color: "#2e4a38", padding: 12, font: { size: 12 } } },
+    legend: { position: "right", labels: { color: "#234671", padding: 12, font: { size: 12 } } },
     tooltip: { callbacks: { label: (c) => ` ${c.label}: ${c.parsed}%` } },
   },
 };
 
-const GREEN = ["#1a5c38","#2e7d52","#43a570","#66bb8a","#98d4b0","#c8e6c9","#a5d6a7","#81c784"];
+const GREEN = ["#002868","#16488A","#3265A6","#5985BC","#8DAED5","#D8E5F4","#B8CEE8","#739BC9"];
 
 // ══════════════════════════════════════════════════════════════
 // NOTE ON THE API: there is no municipality level and no /api/data
@@ -89,13 +89,25 @@ const GREEN = ["#1a5c38","#2e7d52","#43a570","#66bb8a","#98d4b0","#c8e6c9","#a5d
 // returns null for them, so those sections show a "not available" state.
 // ══════════════════════════════════════════════════════════════
 
-export default function DataPage({ token }) {
+export default function DataPage({ token ,user,districtId }) {
   const [districts, setDistricts] = useState([]);
   const [districtName, setDistrictName] = useState("");
   const [tab, setTab]               = useState("population");
   const [data, setData]             = useState(null);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState("");
+
+  useEffect(() => {
+  if (!districtId || districts.length === 0) return;
+
+  const userDistrict = districts.find(
+    d => String(d.district_id) === String(districtId)
+  );
+
+  if (userDistrict) {
+    setDistrictName(userDistrict.district_name);
+  }
+}, [districtId, districts]);
 
   // load districts on mount (public endpoint, no token needed)
   useEffect(() => {
@@ -126,7 +138,7 @@ export default function DataPage({ token }) {
     datasets: [{
       label: "Population",
       data: [d.no_of_male, d.no_of_female],
-      backgroundColor: ["#2e7d52", "#81c995"],
+      backgroundColor: ["#16488A", "#739BC9"],
       borderRadius: 6, borderSkipped: false,
     }],
   } : null;
@@ -141,7 +153,7 @@ export default function DataPage({ token }) {
         parseFloat(d.literate_male_rate),
         parseFloat(d.literate_female_rate),
       ],
-      backgroundColor: ["#1a5c38","#2e7d52","#66bb8a"],
+      backgroundColor: ["#002868","#16488A","#5985BC"],
       borderRadius: 6, borderSkipped: false,
     }],
   } : null;
@@ -180,7 +192,7 @@ export default function DataPage({ token }) {
         Math.round(d.work_6months_plus  * 100),
         Math.round(d.did_not_work       * 100),
       ],
-      backgroundColor: ["#2e7d52","#43a570","#66bb8a","#c8e6c9"],
+      backgroundColor: ["#16488A","#3265A6","#5985BC","#D8E5F4"],
       borderRadius: 6, borderSkipped: false,
     }],
   } : null;
@@ -213,23 +225,23 @@ export default function DataPage({ token }) {
 
       {/* ── Page header ── */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 700, color: "#1a3c2e" }}>
+        <h1 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 700, color: "#002868" }}>
           District Data
         </h1>
-        <p style={{ margin: 0, color: "#7a9e8a", fontSize: 13 }}>
+        <p style={{ margin: 0, color: "#647B9A", fontSize: 13 }}>
           National Population and Housing Census 2078
         </p>
       </div>
 
       {/* ── District dropdown ── */}
       <div style={{
-        background: "#fff", border: "1px solid #e0e9e4",
+        background: "#fff", border: "1px solid #DEE6F0",
         borderRadius: 12, padding: "16px 20px",
         display: "flex", gap: 20, flexWrap: "wrap",
         alignItems: "flex-end", marginBottom: 24,
       }}>
         <div style={{ flex: 1, minWidth: 180 }}>
-          <label style={{ display: "block", fontSize: 11, color: "#7a9e8a", marginBottom: 6, textTransform: "uppercase", letterSpacing: ".5px" }}>
+          <label style={{ display: "block", fontSize: 11, color: "#647B9A", marginBottom: 6, textTransform: "uppercase", letterSpacing: ".5px" }}>
             Select a district
           </label>
           <select
@@ -237,8 +249,8 @@ export default function DataPage({ token }) {
             onChange={e => setDistrictName(e.target.value)}
             style={{
               width: "100%", padding: "9px 12px",
-              borderRadius: 8, border: "1px solid #d0e4d8",
-              fontSize: 14, color: "#1a3c2e", background: "#fafdfc",
+              borderRadius: 8, border: "1px solid #CCD9EB",
+              fontSize: 14, color: "#002868", background: "#FAFCFF",
               cursor: "pointer",
             }}
           >
@@ -264,10 +276,10 @@ export default function DataPage({ token }) {
                 onClick={() => setTab(t)}
                 style={{
                   padding: "8px 22px", borderRadius: "8px 8px 0 0",
-                  border: isWater && active ? "1px solid #2e7d52" : "1px solid #e0e9e4",
-                  borderBottom: active ? "2px solid #fff" : "1px solid #e0e9e4",
-                  background: active ? "#fff" : "#f4f8f5",
-                  color: active ? (isWater ? "#1a5c38" : "#1a3c2e") : "#7a9e8a",
+                  border: isWater && active ? "1px solid #16488A" : "1px solid #DEE6F0",
+                  borderBottom: active ? "2px solid #fff" : "1px solid #DEE6F0",
+                  background: active ? "#fff" : "#F3F6FB",
+                  color: active ? (isWater ? "#002868" : "#002868") : "#647B9A",
                   fontWeight: active ? 700 : 400,
                   fontSize: 13, cursor: "pointer",
                   textTransform: "capitalize",
@@ -284,14 +296,14 @@ export default function DataPage({ token }) {
       {!districtName && (
         <div style={{
           textAlign: "center", padding: "80px 0",
-          color: "#9eb8ab", fontSize: 15,
+          color: "#879BB6", fontSize: 15,
         }}>
           Select a district to view data
         </div>
       )}
 
       {loading && (
-        <div style={{ textAlign: "center", padding: "60px", color: "#7a9e8a" }}>
+        <div style={{ textAlign: "center", padding: "60px", color: "#647B9A" }}>
           Loading...
         </div>
       )}
@@ -372,7 +384,7 @@ export default function DataPage({ token }) {
       {/* ══ KHANEPANI (DRINKING WATER) TAB ══ */}
       {!loading && d && tab === "khanepani" && (
         hasDetail ? (
-          <Section title="Khanepani — Drinking Water Sources" accent="#2e7d52">
+          <Section title="Khanepani — Drinking Water Sources" accent="#16488A">
             <div style={{ maxWidth: 600, margin: "0 auto" }}>
               <ChartCanvas
                 id={`water-${districtName}`}

@@ -15,11 +15,12 @@ exports.signup = async (req, res) => {
         });
     }
 
-     if (!/^[0-9]{10}$/.test(phone)) {
-        return res.status(400).json({
-            success: false,
-            message: "Phone number must be exactly 10 digits"
-        });
+     if (!/^(97|98)[0-9]{8}$/.test(phone)) {
+    return res.status(400).json({
+        success: false,
+        message: "Please enter a valid Nepal mobile number starting with 97 or 98"
+    });
+
     }
 
      if (password.length < 8) {

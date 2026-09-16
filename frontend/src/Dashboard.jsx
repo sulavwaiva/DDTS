@@ -111,10 +111,11 @@ export default function Dashboard({ user, token }) {
           margin: 0,
           fontSize: "24px",
           lineHeight: 1.2,
-          color: "#1a3c2e",
+          color: "#002868 ",
+          textAlign:"center",
         }}
       >
-        Nepal Development Dashboard
+        DDMIS Dashboard
       </h1>
     </div>
 

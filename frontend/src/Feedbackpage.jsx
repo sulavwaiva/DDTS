@@ -2,20 +2,54 @@ import { useState, useEffect } from "react";
 
 const API = "http://localhost:3000/api";
 
+// Shared API helper: every protected request follows the DDTS JWT contract.
+async function apiRequest(path, options = {}, token) {
+  const response = await fetch(`${API}${path}`, {
+    ...options,
+    headers: {
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  const data = await response.json().catch(() => ({ success: false, message: "Invalid server response" }));
+  if (!response.ok || data.success === false) {
+    throw new Error(data.message || `Request failed (${response.status})`);
+  }
+  return data;
+}
+
 /* ---- DDMS brand palette ---- */
 const BRAND = {
-  teal: "#0F3D3B",
-  tealDeep: "#082221",
-  tealMid: "#144B47",
-  gold: "#E8992B",
-  goldSoft: "#FCF0DC",
-  blue: "#1F5C9E",
-  blueSoft: "#E7F0FA",
+  // Primary DDMS navy requested by the design brief.
+  teal: "#002868",
+  tealDeep: "#001638",
+  tealMid: "#0A3D87",
+  gold: "#F2B84B",
+  goldSoft: "#FFF5DE",
+  blue: "#1769AA",
+  blueSoft: "#EAF3FC",
   red: "#D5402F",
   redSoft: "#FBE7E3",
-  cream: "#F4F7F5",
-  muted: "#8B8578",
+  cream: "#F4F7FB",
+  muted: "#64748B",
 };
+
+const UI_STYLES = `
+  .ddms-page { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .ddms-card { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+  .ddms-card:hover { transform: translateY(-2px); box-shadow: 0 18px 42px -24px rgba(0,40,104,.38); }
+  .ddms-button:not(:disabled):hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .ddms-button { transition: filter .2s ease, transform .2s ease, background .2s ease; }
+  .ddms-field:focus { border-color: #002868 !important; box-shadow: 0 0 0 4px rgba(0,40,104,.10); }
+  .ddms-admin-layout { display: flex; gap: 16px; align-items: flex-start; }
+  @media (max-width: 760px) {
+    .ddms-page { padding: 28px 14px !important; }
+    .ddms-card { border-radius: 18px !important; padding-left: 22px !important; padding-right: 22px !important; }
+    .ddms-admin-layout { flex-direction: column; }
+    .ddms-detail { width: 100% !important; position: static !important; box-sizing: border-box; }
+  }
+`;
 
 const STATUS_STYLES = {
   pending:  { bg: BRAND.goldSoft, color: "#96631B", label: "Pending",  dot: BRAND.gold },
@@ -78,25 +112,23 @@ export function CitizenFeedbackPage({ token, user }) {
 
   function loadMyFeedback() {
     setFetching(true);
-    fetch(`${API}/feedback/mine`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(d => { if (d.success) setMyFeedback(d.data); })
+    apiRequest("/feedback/mine", {}, token)
+      .then(d => setMyFeedback(Array.isArray(d.data) ? d.data : []))
+      .catch(e => setError(e.message))
       .finally(() => setFetching(false));
   }
 
-  useEffect(() => { loadMyFeedback(); }, []);
+  useEffect(() => { loadMyFeedback(); }, [token]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!details.trim()) return;
     setLoading(true); setError(""); setSuccess("");
     try {
-      const res = await fetch(`${API}/feedback`, {
+      const data = await apiRequest("/feedback", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ details, rating: rating || undefined }),
-      });
-      const data = await res.json();
+        body: JSON.stringify({ details: details.trim() }),
+      }, token);
       if (data.success) {
         setSuccess("Feedback submitted successfully. We will review it shortly.");
         setDetails(""); setRating(0);
@@ -104,12 +136,12 @@ export function CitizenFeedbackPage({ token, user }) {
       } else {
         setError(data.message || "Submission failed");
       }
-    } catch { setError("Could not reach the server."); }
+    } catch (e) { setError(e.message || "Could not reach the server."); }
     finally { setLoading(false); }
   }
 
   return (
-    <div style={{
+    <div className="ddms-page" style={{
       background: `linear-gradient(160deg, ${BRAND.tealDeep} 0%, ${BRAND.teal} 55%, ${BRAND.tealMid} 100%)`,
       minHeight: "100vh",
       padding: "48px 20px",
@@ -117,9 +149,17 @@ export function CitizenFeedbackPage({ token, user }) {
       flexDirection: "column",
       alignItems: "center",
     }}>
+      <style>{UI_STYLES}</style>
+      <div style={{ width: "100%", maxWidth: 460, marginBottom: 18, color: "#fff" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: BRAND.gold, boxShadow: `0 0 0 6px rgba(242,184,75,.18)` }} />
+          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".14em", textTransform: "uppercase", opacity: .82 }}>DDMIS Citizen Portal</span>
+        </div>
+        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, opacity: .78 }}>Your voice helps improve district services.</p>
+      </div>
 
       {/* Feedback card */}
-      <div style={{
+      <div className="ddms-card" style={{
         position: "relative",
         background: "#fff",
         borderRadius: 24,
@@ -144,7 +184,8 @@ export function CitizenFeedbackPage({ token, user }) {
         <StarRating value={rating} onChange={setRating} />
 
         <form onSubmit={handleSubmit}>
-          <textarea
+            <textarea
+            className="ddms-field"
             value={details}
             onChange={e => setDetails(e.target.value)}
             placeholder="What can we do to improve your experience?"
@@ -185,6 +226,7 @@ export function CitizenFeedbackPage({ token, user }) {
           </div>
 
           <button
+            className="ddms-button"
             type="submit"
             disabled={loading || !details.trim()}
             style={{
@@ -267,37 +309,33 @@ export function AdminFeedbackPage({ token }) {
 
   function loadAll() {
     setLoading(true);
-    fetch(`${API}/feedback`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(d => { if (d.success) setAll(d.data); })
+    apiRequest("/feedback", {}, token)
+      .then(d => setAll(Array.isArray(d.data) ? d.data : []))
+      .catch(e => setMsg(e.message))
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { loadAll(); }, [token]);
 
   async function openDetail(f) {
     setSelected(f);
     setNewStatus(f.status);
     setNote(""); setMsg("");
-    const res = await fetch(`${API}/feedback/${f.feedback_id}`, { headers: { Authorization: `Bearer ${token}` } });
-    const data = await res.json();
+    const data = await apiRequest(`/feedback/${f.feedback_id}`, {}, token);
     if (data.success) setHistory(data.data.history || []);
   }
 
   async function handleUpdate() {
     setUpdating(true); setMsg("");
     try {
-      const res = await fetch(`${API}/feedback/${selected.feedback_id}/status`, {
+      const data = await apiRequest(`/feedback/${selected.feedback_id}/status`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus, change_note: note || null }),
-      });
-      const data = await res.json();
+      }, token);
       if (data.success) {
         setMsg("Status updated successfully.");
         loadAll();
-        const res2 = await fetch(`${API}/feedback/${selected.feedback_id}`, { headers: { Authorization: `Bearer ${token}` } });
-        const d2   = await res2.json();
+        const d2 = await apiRequest(`/feedback/${selected.feedback_id}`, {}, token);
         if (d2.success) {
           setSelected(prev => ({ ...prev, status: newStatus }));
           setHistory(d2.data.history || []);
@@ -305,7 +343,7 @@ export function AdminFeedbackPage({ token }) {
       } else {
         setMsg(data.message || "Update failed");
       }
-    } catch { setMsg("Could not reach the server."); }
+    } catch (e) { setMsg(e.message || "Could not reach the server."); }
     finally { setUpdating(false); }
   }
 
@@ -325,7 +363,8 @@ export function AdminFeedbackPage({ token }) {
   ];
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 24px" }}>
+    <div className="ddms-page" style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 24px", color: BRAND.teal }}>
+      <style>{UI_STYLES}</style>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 700, color: BRAND.teal }}>
           Feedback Management
@@ -356,7 +395,7 @@ export function AdminFeedbackPage({ token }) {
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+      <div className="ddms-admin-layout">
         {/* Left — feedback list */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {loading ? (
@@ -368,7 +407,7 @@ export function AdminFeedbackPage({ token }) {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {filtered.map(f => (
-                <div
+                <div className="ddms-card"
                   key={f.feedback_id}
                   onClick={() => openDetail(f)}
                   style={{
@@ -400,7 +439,7 @@ export function AdminFeedbackPage({ token }) {
 
         {/* Right — detail panel */}
         {selected && (
-          <div style={{
+          <div className="ddms-detail ddms-card" style={{
             width: 340, flexShrink: 0,
             background: "#fff", border: "1px solid #E9E2D2",
             borderRadius: 12, padding: "20px 22px",
@@ -411,6 +450,7 @@ export function AdminFeedbackPage({ token }) {
                 Feedback #{selected.feedback_id}
               </h3>
               <button
+                className="ddms-button"
                 onClick={() => setSelected(null)}
                 style={{ background: "none", border: "none", cursor: "pointer", color: BRAND.muted, fontSize: 18 }}
               >×</button>
@@ -461,6 +501,7 @@ export function AdminFeedbackPage({ token }) {
                 </p>
               )}
               <button
+                className="ddms-button"
                 onClick={handleUpdate}
                 disabled={updating || newStatus === selected.status}
                 style={{
@@ -483,7 +524,7 @@ export function AdminFeedbackPage({ token }) {
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {history.map(h => (
-                    <div key={h.id} style={{
+                    <div key={h.history_id || h.id} style={{
                       padding: "10px 12px", background: BRAND.cream,
                       borderRadius: 8, borderLeft: `3px solid ${BRAND.gold}`,
                     }}>

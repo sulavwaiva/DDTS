@@ -22,6 +22,15 @@ const PROVINCE_NAMES = {
   7: "Sudurpashchim Province",
 };
 
+function mapsUrl(districtName, provinceName) {
+  const query = [districtName, provinceName, "Nepal"].filter(Boolean).join(", ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+function displayNumber(value) {
+  return value == null || value === "" ? "Not recorded" : Number(value).toLocaleString();
+}
+
 // Province GeoJSON data - paste your provinceData variable here
 // import provinceData from './nepal-province.js';
 
@@ -251,56 +260,72 @@ console.log("GeoJSON:", json);
         {/* Info Panel */}
         {(selectedDistrict || selectedProvince) && (
           <div style={{
-            width: 260, padding: 16, background: "#fff",
+            width: 300, flexShrink: 0, padding: 18, background: "#fff",
             borderLeft: "1px solid #e0e0e0", overflowY: "auto",
+            boxShadow: "-8px 0 24px rgba(15, 45, 75, 0.08)",
           }}>
             {selectedDistrict ? (
               <>
-                <h3 style={{ margin: "0 0 8px", fontSize: 17, color: "#222" }}>
-                  {selectedDistrict}
-                </h3>
-                <p style={{ margin: "0 0 12px", fontSize: 13, color: "#888" }}>
-                  {PROVINCE_NAMES[selectedProvince]}
-                </p>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                  <div>
+                    <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: PROVINCE_COLORS[selectedProvince] || "#3498db" }}>
+                      District overview
+                    </p>
+                    <h3 style={{ margin: 0, fontSize: 20, lineHeight: 1.2, color: "#172b4d" }}>
+                      {selectedDistrict}
+                    </h3>
+                    <p style={{ margin: "6px 0 0", fontSize: 13, color: "#72829a" }}>
+                      {districtInfo?.province || PROVINCE_NAMES[selectedProvince]}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Close district information"
+                    onClick={() => { setSelectedDistrict(null); setDistrictInfo(null); }}
+                    style={{ border: 0, background: "#f3f6fa", color: "#64748b", borderRadius: 8, width: 30, height: 30, fontSize: 19, lineHeight: 1, cursor: "pointer" }}
+                  >
+                    ×
+                  </button>
+                </div>
                 {loading && (
-                  <p style={{ fontSize: 13, color: "#999" }}>Loading...</p>
+                  <div style={{ marginTop: 18, padding: 12, borderRadius: 10, background: "#f5f8fc", color: "#64748b", fontSize: 13 }}>
+                    Loading district details…
+                  </div>
                 )}
                 {districtInfo && !districtInfo.error && (
-                  <div style={{ fontSize: 14 }}>
-                    {districtInfo.total_population && (
-                      <div style={infoRow}>
-                        <span style={infoLabel}>Total population</span>
-                        <span style={infoVal}>
-                          {Number(districtInfo.total_population).toLocaleString()}
-                        </span>
+                  <div style={{ marginTop: 18 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+                      <div style={statCard}>
+                        <span style={statLabel}>Population</span>
+                        <strong style={statValue}>{displayNumber(districtInfo.total_population)}</strong>
                       </div>
-                    )}
-                    {districtInfo.no_of_female && (
-                      <div style={infoRow}>
-                        <span style={infoLabel}>Female</span>
-                        <span style={infoVal}>
-                          {Number(districtInfo.no_of_female).toLocaleString()}
-                        </span>
+                      <div style={statCard}>
+                        <span style={statLabel}>Province</span>
+                        <strong style={{ ...statValue, fontSize: 12 }}>{districtInfo.province || PROVINCE_NAMES[selectedProvince] || "Not recorded"}</strong>
                       </div>
-                    )}
-                    {districtInfo.no_of_male && (
-                      <div style={infoRow}>
-                        <span style={infoLabel}>Male</span>
-                        <span style={infoVal}>
-                          {Number(districtInfo.no_of_male).toLocaleString()}
-                        </span>
+                      <div style={statCard}>
+                        <span style={statLabel}>Female</span>
+                        <strong style={statValue}>{displayNumber(districtInfo.no_of_female)}</strong>
                       </div>
-                    )}
-                    {districtInfo.province && (
-                      <div style={infoRow}>
-                        <span style={infoLabel}>Province</span>
-                        <span style={infoVal}>{districtInfo.province}</span>
+                      <div style={statCard}>
+                        <span style={statLabel}>Male</span>
+                        <strong style={statValue}>{displayNumber(districtInfo.no_of_male)}</strong>
                       </div>
-                    )}
+                    </div>
+                    <a
+                      href={mapsUrl(selectedDistrict, districtInfo.province || PROVINCE_NAMES[selectedProvince])}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 12px", borderRadius: 9, background: "#002868", color: "#fff", textDecoration: "none", fontSize: 13, fontWeight: 700 }}
+                    >
+                      <span aria-hidden="true">📍</span> Open in Google Maps
+                    </a>
                   </div>
                 )}
                 {districtInfo?.error && (
-                  <p style={{ fontSize: 13, color: "#e84545" }}>{districtInfo.error}</p>
+                  <div style={{ marginTop: 18, padding: 12, borderRadius: 10, background: "#fff5f5", color: "#b91c1c", fontSize: 13 }}>
+                    {districtInfo.error}
+                  </div>
                 )}
                 {!loading && !districtInfo && onDistrictClick && (
                   <p style={{ fontSize: 13, color: "#aaa" }}>
@@ -364,3 +389,26 @@ const infoRow = {
 };
 const infoLabel = { color: "#888" };
 const infoVal = { color: "#222", fontWeight: 500 };
+const statCard = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 5,
+  minHeight: 58,
+  padding: "10px 11px",
+  borderRadius: 10,
+  background: "#f5f8fc",
+  border: "1px solid #e7edf5",
+};
+const statLabel = {
+  color: "#7b8ba1",
+  fontSize: 10,
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: ".05em",
+};
+const statValue = {
+  color: "#172b4d",
+  fontSize: 14,
+  fontWeight: 800,
+  lineHeight: 1.25,
+};
